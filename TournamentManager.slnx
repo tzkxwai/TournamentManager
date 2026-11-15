@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/docs/">
+    <File Path="docs/ARCHITECTURE.md" />
+    <File Path="docs/DEVELOPMENT_LOG.md" />
+    <File Path="docs/PLAN.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/PlayerService/PlayerService.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+</Solution>
