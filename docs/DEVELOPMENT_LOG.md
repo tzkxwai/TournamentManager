@@ -1,151 +1,146 @@
-Создал проект TournamentManager в Visual Studio 2026 на платформе .NET 10.
 
-Подготовил структуру проекта с папками src, tests и docs.
+# Журнал разработки TournamentManager
 
-В папке src создал ASP.NET Core Web API приложение PlayerService для работы с игроками.
+## 15.11.2026 — Создание проекта
 
-Создал модель Player с полями:
-- Id — идентификатор игрока;
-- Name — имя игрока;
-- Rating — рейтинг, по умолчанию 1000;
-- CreatedAt — дата создания игрока.
+Начал работу над TournamentManager в Visual Studio 2026. Использую .NET 10 и ASP.NET Core Web API. В решении предусмотрел папки `src`, `tests` и `docs`. Первый сервис — `PlayerService`, он отвечает за игроков.
 
-Добавил PlayersController и реализовал первые два запроса:
-- GET /api/players — получение списка игроков;
-- POST /api/players — создание игрока.
+![Начальная структура проекта](screenshots/project-created.png)
 
-Настроил Git и создал репозиторий на GitHub.
+![Структура решения в Visual Studio](screenshots/project-structure.png)
 
-Коммит: 273efd4
-feat: initialize TournamentManager and PlayerService API
+Создал модель `Player`: `Id`, `Name`, `Rating` (начальное значение — 1000) и `CreatedAt` (текущее время UTC). Затем добавил `PlayersController` с первыми запросами: получение списка игроков и создание игрока.
 
-### Скриншот структуры проекта
+![Модель игрока](screenshots/player-model.png)
 
-![Структура проекта](screenshots/project-structure.png)
+![Первый вариант контроллера](screenshots/player-controller.png)
 
+Проверил создание игрока через POST и получение списка через GET.
 
-## 15.11.2026 — Подключение SQLite
+![Ответ сервиса при создании игрока](screenshots/player-post-response.png)
 
-Подключил SQLite с помощью Entity Framework Core.
+Настроил Git и создал репозиторий [tzkxwai/TournamentManager](https://github.com/tzkxwai/TournamentManager). Первый коммит: `273efd4` — `feat: initialize TournamentManager and PlayerService API`.
 
-Создал PlayerDbContext и настроил подключение к базе данных в Program.cs.
+![Первый коммит](screenshots/git-initial-commit.png)
 
-Создал миграцию InitialCreate и применил её командами:
+![Репозиторий на GitHub](screenshots/github-repository.png)
 
-    dotnet ef migrations add InitialCreate --project src/PlayerService/PlayerService.csproj
+## 15.11.2026 — Подключение базы данных
 
-    dotnet ef database update --project src/PlayerService/PlayerService.csproj
+Подключил SQLite через Entity Framework Core. Создал `PlayerDbContext`, зарегистрировал его в `Program.cs` и настроил строку подключения `Data Source=players.db`.
 
-Изменил PlayersController, чтобы игроки сохранялись в SQLite, а не в оперативной памяти приложения.
+![Контекст базы данных и файлы проекта](screenshots/database-context.png)
 
-Добавил файлы базы данных в .gitignore.
+Создал миграцию `InitialCreate` и применил её:
 
-### Проверка
+```powershell
+dotnet ef migrations add InitialCreate --project src/PlayerService/PlayerService.csproj
+dotnet ef database update --project src/PlayerService/PlayerService.csproj
+```
 
-Через POST-запрос создал игрока burmalda.
+![Работа с миграцией](screenshots/efcore-migration.png)
 
-Полученные данные:
-- Id: 1
-- Name: burmalda
-- Rating: 1000
-- CreatedAt: 2026-11-15T18:53:32.0547351
+После этого перевёл `PlayersController` на работу с SQLite. Проверил, что созданный игрок остаётся в базе после перезапуска приложения. Для тестового игрока `burmalda` был назначен `Id = 1`, рейтинг — `1000`.
 
-После перезапуска приложения игрок остался в базе данных.
+![Получение игроков из SQLite](screenshots/player-get.png)
 
-Проверил получение игроков через GET /api/players.
+Файлы `*.db`, `*.db-shm` и `*.db-wal` добавил в `.gitignore`.
 
-### Скриншот
+Изменения делал в ветке `feature/player-database`. Коммит: `9bb3241` (`feat: add SQLite persistence to PlayerService`). [Pull Request #1](https://github.com/tzkxwai/TournamentManager/pull/1), объединение — `e036be4`.
 
-![Получение игроков](screenshots/player-get.png)
+![Работа с веткой базы данных](screenshots/git-database-branch.png)
 
-### Git
+## 15.11.2026 — CRUD для игроков
 
-Ветка: feature/player-database
+Дополнил `PlayersController`. В результате сервис поддерживает пять запросов:
 
-Коммит: 9bb3241
-feat: add SQLite persistence to PlayerService
+| Метод | Адрес | Что делает |
+| --- | --- | --- |
+| GET | `/api/players` | Возвращает список игроков |
+| GET | `/api/players/{id}` | Возвращает игрока по ID |
+| POST | `/api/players` | Создаёт игрока |
+| PUT | `/api/players/{id}` | Меняет имя игрока |
+| DELETE | `/api/players/{id}` | Удаляет игрока |
 
-Pull Request #1:
-https://github.com/tzkxwai/TournamentManager/pull/1
+![Контроллер с CRUD-методами](screenshots/crud-controller.png)
 
-Коммит объединения: e036be4
+Для проверки PUT изменил имя игрока с `burmalda` на `burmalda_updated`:
 
+```powershell
+$player = @{ name = "burmalda_updated" } | ConvertTo-Json
+Invoke-RestMethod -Uri "https://localhost:7277/api/players/1" -Method Put -ContentType "application/json" -Body $player
+```
 
-## 15.11.2026 — Реализация CRUD
+После GET убедился, что имя изменилось, а рейтинг `1000`, ID и дата создания остались прежними.
 
-Продолжил разработку PlayerService.
+![Проверка PUT](screenshots/player-put.png)
 
-Добавил получение игрока по ID, изменение имени и удаление игрока.
+Для DELETE создал отдельного игрока `test_delete` с ID 2, затем удалил его:
 
-Реализованные методы:
+```powershell
+Invoke-RestMethod -Uri "https://localhost:7277/api/players/2" -Method Delete
+```
 
-| Метод | Адрес | Назначение |
-|---|---|---|
-| GET | /api/players | Получение всех игроков |
-| GET | /api/players/{id} | Получение игрока по ID |
-| POST | /api/players | Создание игрока |
-| PUT | /api/players/{id} | Изменение имени игрока |
-| DELETE | /api/players/{id} | Удаление игрока |
+![Создание игрока для проверки удаления](screenshots/player-delete-create.png)
 
+![Запрос на удаление](screenshots/player-delete.png)
 
-### Проверка GET
+![Список игроков после удаления](screenshots/player-delete-result.png)
 
-Открыл адрес:
+После удаления в списке остался только `burmalda_updated`.
 
-https://localhost:7277/api/players/1
+Работал в ветке `feature/player-crud`. Коммит `2c40506` (`feat: implement player CRUD operations`), [Pull Request #2](https://github.com/tzkxwai/TournamentManager/pull/2), объединение — `af43533`. После объединения обновил локальную ветку `main`.
 
-Сервер вернул данные игрока burmalda с ID 1.
+![Проверка истории Git](screenshots/crud-git-history.png)
 
+## 15.11.2026 — Документация
 
-### Проверка PUT
+Собрал результаты работы в `docs/DEVELOPMENT_LOG.md`, добавил скриншоты запросов и структуры проекта. Документацию отправил в `main` коммитом `a19a352` — `docs: update development log and add screenshots`.
 
-В PowerShell выполнил команды:
+## 15.11.2026 — Автоматические тесты
 
-    $player = @{ name = "burmalda_updated" } | ConvertTo-Json
+Создал ветку `feature/player-tests`. В папке `tests` появился проект `PlayerService.Tests` на .NET 10 с xUnit. Добавил его в `TournamentManager.slnx` и подключил ссылку на `PlayerService`.
 
-    Invoke-RestMethod -Uri "https://localhost:7277/api/players/1" -Method Put -ContentType "application/json" -Body $player
+![Тестовый проект в решении](screenshots/project-tests-structure.png)
 
-Имя игрока изменилось с burmalda на burmalda_updated.
+Сначала проверил модель `Player`:
 
-Рейтинг остался равен 1000.
+- `NewPlayer_ShouldHaveDefaultRating` — начальный рейтинг равен 1000.
+- `NewPlayer_ShouldHaveCreationDate` — `CreatedAt` выставляется при создании игрока.
 
-ID и дата создания также не изменились.
+![Первый успешно пройденный тест](screenshots/unit-test-first-pass.png)
 
-После повторного GET-запроса убедился, что новое имя сохранилось в SQLite.
+![Два теста модели прошли](screenshots/unit-tests-two-pass.png)
 
-### Скриншот PUT
+Затем добавил четыре теста работы с SQLite:
 
-![Изменение игрока](screenshots/player-put.png)
+- `AddPlayer_ShouldSavePlayerToDatabase` — добавление записи.
+- `GetPlayer_ShouldReadPlayerFromDatabase` — чтение через новый экземпляр `PlayerDbContext`.
+- `UpdatePlayer_ShouldSaveNewName` — сохранение изменённого имени.
+- `DeletePlayer_ShouldRemovePlayerFromDatabase` — удаление записи.
 
+Во всех тестах базы данных используется SQLite в памяти (`Data Source=:memory:`). Соединение остаётся открытым на время теста, поэтому несколько контекстов могут работать с одной временной базой. Файл `players.db` не меняется.
 
-### Проверка DELETE
+![Три успешных теста](screenshots/database-tests-three-pass.png)
 
-Создал тестового игрока:
-- Id: 2
-- Name: test_delete
-- Rating: 1000
+![Четыре успешных теста](screenshots/database-tests-four-pass.png)
 
-Для удаления выполнил команду:
+![Пять успешных тестов](screenshots/database-tests-five-pass.png)
 
-    Invoke-RestMethod -Uri "https://localhost:7277/api/players/2" -Method Delete
+![Шесть успешных тестов](screenshots/database-tests-six-pass.png)
 
-Команда выполнилась без ошибок.
+Итог последнего запуска в Visual Studio: **6 тестов пройдено, 0 ошибок, 0 пропущено**. Время выполнения — около 1,4 секунды.
 
-После удаления открыл:
+Это пока тесты модели и работы EF Core с SQLite. Методы HTTP-контроллера отдельно автоматическими тестами ещё не покрыты.
 
-https://localhost:7277/api/players
+Проверил изменения в Git. В коммит подготовлены `TournamentManager.slnx` и три файла тестового проекта; файлы сборки `bin` и `obj` не добавлялись.
 
-В списке остался только игрок burmalda_updated.
+![Состояние рабочей ветки](screenshots/git-tests-status.png)
 
-Тестовый игрок test_delete был удалён из базы данных.
+![Файлы, подготовленные к коммиту](screenshots/git-tests-staged.png)
 
-### Скриншоты DELETE
+**Состояние на момент записи:** ветка `feature/player-tests`, файлы тестов подготовлены к коммиту. Коммит и Pull Request для этой ветки ещё не созданы.
 
-![Удаление игрока](screenshots/player-delete.png)
+## Что дальше
 
-![Результат удаления](screenshots/player-delete-result.png)
-
-
-### Git
-
-Ветка: feature/player-crud
+Следующий шаг — сохранить тесты и обновлённый журнал в Git, отправить ветку на GitHub и создать Pull Request #3. После этого можно написать отдельные тесты `PlayersController` и приступить к `TournamentService`.
