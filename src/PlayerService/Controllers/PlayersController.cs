@@ -25,6 +25,19 @@ namespace PlayerService.Controllers
             return Ok(players);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPlayer(int id)
+        {
+            var player = await _context.Players.FindAsync(id);
+
+            if (player == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(player);
+        }
+
         [HttpPost]
         public async Task<IActionResult> AddPlayer(Player player)
         {
@@ -38,5 +51,40 @@ namespace PlayerService.Controllers
 
             return Ok(player);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePlayer(int id, Player updatedPlayer)
+        {
+            var player = await _context.Players.FindAsync(id);
+
+            if (player == null)
+            {
+                return NotFound();
+            }
+
+            player.Name = updatedPlayer.Name;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(player);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePlayer(int id)
+        {
+            var player = await _context.Players.FindAsync(id);
+
+            if (player == null)
+            {
+                return NotFound();
+            }
+
+            _context.Players.Remove(player);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
     }
 }
