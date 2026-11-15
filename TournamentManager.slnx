@@ -6,8 +6,10 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/PlayerService/PlayerService.csproj" />
+    <Project Path="src/TournamentService/TournamentService.csproj" Id="5feb6e5b-4ce0-4d2c-8967-7e3b7a22929a" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/PlayerService.Tests/PlayerService.Tests.csproj" />
+    <Project Path="tests/TournamentService.Tests/TournamentService.Tests.csproj" />
   </Folder>
 </Solution>

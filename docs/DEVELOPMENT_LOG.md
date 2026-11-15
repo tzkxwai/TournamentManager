@@ -1,146 +1,134 @@
+## 2026-11-16 — Разработка TournamentService
 
-# Журнал разработки TournamentManager
+Начал разработку сервиса для проведения турниров.
 
-## 15.11.2026 — Создание проекта
+Используются .NET 10, ASP.NET Core Web API, Entity Framework Core и SQLite.
 
-Начал работу над TournamentManager в Visual Studio 2026. Использую .NET 10 и ASP.NET Core Web API. В решении предусмотрел папки `src`, `tests` и `docs`. Первый сервис — `PlayerService`, он отвечает за игроков.
+### Создание турниров
 
-![Начальная структура проекта](screenshots/project-created.png)
+Реализовал:
+- получение списка турниров;
+- получение турнира по ID;
+- создание нового турнира;
+- сохранение информации о турнирах в SQLite.
 
-![Структура решения в Visual Studio](screenshots/project-structure.png)
+Для проверки API использовал PowerShell и Invoke-RestMethod.
 
-Создал модель `Player`: `Id`, `Name`, `Rating` (начальное значение — 1000) и `CreatedAt` (текущее время UTC). Затем добавил `PlayersController` с первыми запросами: получение списка игроков и создание игрока.
+### Создание турнирной сетки
 
-![Модель игрока](screenshots/player-model.png)
+Создал класс `TournamentBracketService`.
 
-![Первый вариант контроллера](screenshots/player-controller.png)
+Реализовал генерацию олимпийской турнирной сетки:
+- удаление повторяющихся ID игроков;
+- проверка минимального количества участников;
+- создание пар первого раунда;
+- распределение участников по матчам.
 
-Проверил создание игрока через POST и получение списка через GET.
+Добавил сохранение матчей в таблицу `Matches`.
 
-![Ответ сервиса при создании игрока](screenshots/player-post-response.png)
+### Результаты матчей
 
-Настроил Git и создал репозиторий [tzkxwai/TournamentManager](https://github.com/tzkxwai/TournamentManager). Первый коммит: `273efd4` — `feat: initialize TournamentManager and PlayerService API`.
+В `TournamentsController` добавил возможность:
+- записывать победителя матча;
+- проверять участие игрока в матче;
+- получать сохранённую турнирную сетку;
+- создавать следующий раунд;
+- определять завершение турнира.
 
-![Первый коммит](screenshots/git-initial-commit.png)
+После завершения финального матча турнир получает статус завершённого.
 
-![Репозиторий на GitHub](screenshots/github-repository.png)
+Также добавил защиту от изменения результатов завершённого турнира.
 
-## 15.11.2026 — Подключение базы данных
+### Миграции базы данных
 
-Подключил SQLite через Entity Framework Core. Создал `PlayerDbContext`, зарегистрировал его в `Program.cs` и настроил строку подключения `Data Source=players.db`.
+Добавил модель `TournamentMatch` и таблицу `Matches`.
 
-![Контекст базы данных и файлы проекта](screenshots/database-context.png)
+Создал миграцию `AddTournamentMatches` и применил её к SQLite.
 
-Создал миграцию `InitialCreate` и применил её:
-
-```powershell
-dotnet ef migrations add InitialCreate --project src/PlayerService/PlayerService.csproj
-dotnet ef database update --project src/PlayerService/PlayerService.csproj
-```
-
-![Работа с миграцией](screenshots/efcore-migration.png)
-
-После этого перевёл `PlayersController` на работу с SQLite. Проверил, что созданный игрок остаётся в базе после перезапуска приложения. Для тестового игрока `burmalda` был назначен `Id = 1`, рейтинг — `1000`.
-
-![Получение игроков из SQLite](screenshots/player-get.png)
-
-Файлы `*.db`, `*.db-shm` и `*.db-wal` добавил в `.gitignore`.
-
-Изменения делал в ветке `feature/player-database`. Коммит: `9bb3241` (`feat: add SQLite persistence to PlayerService`). [Pull Request #1](https://github.com/tzkxwai/TournamentManager/pull/1), объединение — `e036be4`.
-
-![Работа с веткой базы данных](screenshots/git-database-branch.png)
-
-## 15.11.2026 — CRUD для игроков
-
-Дополнил `PlayersController`. В результате сервис поддерживает пять запросов:
-
-| Метод | Адрес | Что делает |
-| --- | --- | --- |
-| GET | `/api/players` | Возвращает список игроков |
-| GET | `/api/players/{id}` | Возвращает игрока по ID |
-| POST | `/api/players` | Создаёт игрока |
-| PUT | `/api/players/{id}` | Меняет имя игрока |
-| DELETE | `/api/players/{id}` | Удаляет игрока |
-
-![Контроллер с CRUD-методами](screenshots/crud-controller.png)
-
-Для проверки PUT изменил имя игрока с `burmalda` на `burmalda_updated`:
+Использованные команды:
 
 ```powershell
-$player = @{ name = "burmalda_updated" } | ConvertTo-Json
-Invoke-RestMethod -Uri "https://localhost:7277/api/players/1" -Method Put -ContentType "application/json" -Body $player
+dotnet ef migrations add AddTournamentMatches --project src/TournamentService --startup-project src/TournamentService
 ```
-
-После GET убедился, что имя изменилось, а рейтинг `1000`, ID и дата создания остались прежними.
-
-![Проверка PUT](screenshots/player-put.png)
-
-Для DELETE создал отдельного игрока `test_delete` с ID 2, затем удалил его:
 
 ```powershell
-Invoke-RestMethod -Uri "https://localhost:7277/api/players/2" -Method Delete
+dotnet ef database update --project src/TournamentService --startup-project src/TournamentService
 ```
 
-![Создание игрока для проверки удаления](screenshots/player-delete-create.png)
+### Автоматические тесты TournamentService
 
-![Запрос на удаление](screenshots/player-delete.png)
+Создал проект `TournamentService.Tests` на .NET 10 с xUnit.
 
-![Список игроков после удаления](screenshots/player-delete-result.png)
+Добавил ссылку на `TournamentService` и пакет `Microsoft.EntityFrameworkCore.Sqlite` версии `10.0.12`.
 
-После удаления в списке остался только `burmalda_updated`.
+Создал два файла с тестами.
 
-Работал в ветке `feature/player-crud`. Коммит `2c40506` (`feat: implement player CRUD operations`), [Pull Request #2](https://github.com/tzkxwai/TournamentManager/pull/2), объединение — `af43533`. После объединения обновил локальную ветку `main`.
+`TournamentBracketTests.cs`:
+- `FourPlayers_ShouldCreateTwoMatches` — проверка сетки для четырёх игроков;
+- `TwoPlayers_ShouldCreateOneMatch` — проверка сетки для двух игроков;
+- `DuplicatePlayers_ShouldBeRemoved` — проверка удаления повторяющихся участников;
+- `OnePlayer_ShouldThrowException` — проверка запрета турнира с одним игроком.
 
-![Проверка истории Git](screenshots/crud-git-history.png)
+`TournamentDatabaseTests.cs`:
+- `AddTournament_ShouldSaveToDatabase` — сохранение турнира;
+- `AddMatch_ShouldSaveToDatabase` — сохранение матча;
+- `UpdateWinner_ShouldSaveToDatabase` — сохранение победителя.
 
-## 15.11.2026 — Документация
+Для тестов базы данных используется SQLite в памяти (`Data Source=:memory:`). Основной файл `tournaments.db` при тестировании не изменяется.
 
-Собрал результаты работы в `docs/DEVELOPMENT_LOG.md`, добавил скриншоты запросов и структуры проекта. Документацию отправил в `main` коммитом `a19a352` — `docs: update development log and add screenshots`.
+### Результаты тестирования
 
-## 15.11.2026 — Автоматические тесты
+Сначала отдельно проверил `TournamentService.Tests`:
 
-Создал ветку `feature/player-tests`. В папке `tests` появился проект `PlayerService.Tests` на .NET 10 с xUnit. Добавил его в `TournamentManager.slnx` и подключил ссылку на `PlayerService`.
+- всего тестов: 7;
+- успешно: 7;
+- ошибок: 0;
+- пропущено: 0.
 
-![Тестовый проект в решении](screenshots/project-tests-structure.png)
+Затем запустил тестирование всего решения:
 
-Сначала проверил модель `Player`:
+```powershell
+dotnet test TournamentManager.slnx
+```
 
-- `NewPlayer_ShouldHaveDefaultRating` — начальный рейтинг равен 1000.
-- `NewPlayer_ShouldHaveCreationDate` — `CreatedAt` выставляется при создании игрока.
+Итоговый результат:
 
-![Первый успешно пройденный тест](screenshots/unit-test-first-pass.png)
+| Проект | Результат |
+|---|---:|
+| PlayerService.Tests | 6 тестов успешно |
+| TournamentService.Tests | 7 тестов успешно |
+| Всего | 13 тестов успешно |
 
-![Два теста модели прошли](screenshots/unit-tests-two-pass.png)
+Ошибок: 0.
 
-Затем добавил четыре теста работы с SQLite:
+Сборка всех четырёх проектов прошла успешно.
 
-- `AddPlayer_ShouldSavePlayerToDatabase` — добавление записи.
-- `GetPlayer_ShouldReadPlayerFromDatabase` — чтение через новый экземпляр `PlayerDbContext`.
-- `UpdatePlayer_ShouldSaveNewName` — сохранение изменённого имени.
-- `DeletePlayer_ShouldRemovePlayerFromDatabase` — удаление записи.
+## Текущее состояние проекта на 16.11.2026
 
-Во всех тестах базы данных используется SQLite в памяти (`Data Source=:memory:`). Соединение остаётся открытым на время теста, поэтому несколько контекстов могут работать с одной временной базой. Файл `players.db` не меняется.
+Реализованы два основных сервиса:
+- `PlayerService`;
+- `TournamentService`.
 
-![Три успешных теста](screenshots/database-tests-three-pass.png)
+Созданы два тестовых проекта:
+- `PlayerService.Tests`;
+- `TournamentService.Tests`.
 
-![Четыре успешных теста](screenshots/database-tests-four-pass.png)
+Реализованы основные функции создания турниров, генерации сетки, сохранения матчей, записи победителей и формирования следующих раундов.
 
-![Пять успешных тестов](screenshots/database-tests-five-pass.png)
+Созданы и обновлены документы:
+- `ARCHITECTURE.md`;
+- `DEVELOPMENT_LOG.md`;
+- `PLAN.md`.
 
-![Шесть успешных тестов](screenshots/database-tests-six-pass.png)
-
-Итог последнего запуска в Visual Studio: **6 тестов пройдено, 0 ошибок, 0 пропущено**. Время выполнения — около 1,4 секунды.
-
-Это пока тесты модели и работы EF Core с SQLite. Методы HTTP-контроллера отдельно автоматическими тестами ещё не покрыты.
-
-Проверил изменения в Git. В коммит подготовлены `TournamentManager.slnx` и три файла тестового проекта; файлы сборки `bin` и `obj` не добавлялись.
-
-![Состояние рабочей ветки](screenshots/git-tests-status.png)
-
-![Файлы, подготовленные к коммиту](screenshots/git-tests-staged.png)
-
-**Состояние на момент записи:** ветка `feature/player-tests`, файлы тестов подготовлены к коммиту. Коммит и Pull Request для этой ветки ещё не созданы.
+Общее количество успешно пройденных автоматических тестов — 13.
 
 ## Что дальше
 
-Следующий шаг — сохранить тесты и обновлённый журнал в Git, отправить ветку на GitHub и создать Pull Request #3. После этого можно написать отдельные тесты `PlayersController` и приступить к `TournamentService`.
+Следующие задачи разработки:
+
+1. Проверить состояние Git и сохранить последние изменения в репозитории.
+2. Подготовить веб-интерфейс для управления турнирами.
+3. Реализовать систему рейтинга Эло.
+4. Добавить авторизацию и роли пользователей.
+5. Рассмотреть выделение MatchService в отдельный сервис.
+6. Подготовить демонстрацию проекта для защиты учебной практики.
