@@ -1,0 +1,202 @@
+﻿
+@model List<TournamentWeb.Controllers.TournamentDto>
+
+@{
+    ViewData["Title"] = "Мои турниры";
+
+    var tournaments = Model ?? new List<TournamentWeb.Controllers.TournamentDto>();
+}
+
+<style>
+    body {
+        background: #0f172a;
+        color: #f1f5f9;
+    }
+
+    .tournaments-page {
+        padding: 35px 0;
+    }
+
+    .page-header {
+        background: linear-gradient(120deg, #1e293b, #312e81);
+        border: 1px solid #334155;
+        border-radius: 20px;
+        padding: 35px;
+        margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+        color: white;
+        font-weight: 800;
+    }
+
+    .tournament-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 18px;
+        transition: 0.2s;
+    }
+
+    .tournament-card:hover {
+        border-color: #6366f1;
+        transform: translateY(-2px);
+    }
+
+    .tournament-card h4 {
+        color: white;
+        font-weight: 700;
+    }
+
+    .muted {
+        color: #94a3b8;
+    }
+
+    .status-active {
+        color: #34d399;
+        font-weight: 700;
+    }
+
+    .status-finished {
+        color: #818cf8;
+        font-weight: 700;
+    }
+
+    .btn-main {
+        background: #6366f1;
+        color: white;
+        border: none;
+        padding: 11px 22px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-main:hover {
+        background: #4f46e5;
+        color: white;
+    }
+
+    .empty-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 55px 25px;
+        text-align: center;
+    }
+</style>
+
+<div class="container tournaments-page">
+
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <p class="text-info fw-bold mb-2">
+                    TOURNAMENT MANAGEMENT SYSTEM
+                </p>
+
+                <h1>🏆 Мои турниры</h1>
+
+                <p class="muted mb-0">
+                    Управляй соревнованиями и следи за результатами.
+                </p>
+            </div>
+
+            <a asp-controller="Tournaments"
+               asp-action="Create"
+               class="btn-main">
+                + Создать турнир
+            </a>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-white fw-bold mb-0">
+            Список турниров
+        </h3>
+
+        <span class="muted">
+            Всего: @tournaments.Count
+        </span>
+    </div>
+
+    @if (tournaments.Any())
+    {
+        @foreach (var tournament in tournaments.OrderByDescending(t => t.CreatedAt))
+        {
+            <div class="tournament-card">
+
+                <div class="row align-items-center">
+
+                    <div class="col-md-8">
+
+                        <h4>🏆 @tournament.Name</h4>
+
+                        <p class="muted mb-2">
+                            ID турнира: @tournament.Id
+                        </p>
+
+                        <p class="muted mb-2">
+                            👥 Участников: @(tournament.PlayerIds?.Count ?? 0)
+                        </p>
+
+                        <p class="muted mb-3">
+                            📅 Создан:
+                            @tournament.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                        </p>
+
+                        <a asp-controller="Tournaments"
+                           asp-action="Details"
+                           asp-route-id="@tournament.Id"
+                           class="btn-main">
+                            Открыть турнир →
+                        </a>
+
+                    </div>
+
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+
+                        @if (tournament.IsFinished)
+                        {
+                            <span class="status-finished">
+                                ● Завершён
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="status-active">
+                                ● Активен
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-card">
+            <div style="font-size: 55px;">🏟️</div>
+
+            <h3 class="text-white mt-3">
+                Турниров пока нет
+            </h3>
+
+            <p class="muted mt-2">
+                Создай первый турнир, чтобы начать соревнование.
+            </p>
+
+            <a asp-controller="Tournaments"
+               asp-action="Create"
+               class="btn-main mt-3">
+                + Создать турнир
+            </a>
+        </div>
+    }
+
+</div>

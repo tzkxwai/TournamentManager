@@ -1,0 +1,324 @@
+﻿@using TournamentWeb.Controllers
+
+@{
+    ViewData["Title"] = "Главная";
+
+    var tournaments = ViewBag.Tournaments as List<TournamentDto>
+        ?? new List<TournamentDto>();
+
+    var recentTournaments = tournaments
+        .OrderByDescending(t => t.CreatedAt)
+        .Take(5)
+        .ToList();
+
+    var activeCount = tournaments.Count(t => !t.IsFinished);
+    var finishedCount = tournaments.Count(t => t.IsFinished);
+}
+
+<style>
+    body {
+        background: #0f172a;
+        color: #f1f5f9;
+    }
+
+    .dashboard {
+        padding: 35px 0;
+    }
+
+    .hero {
+        background: linear-gradient(120deg, #1e293b, #312e81);
+        border: 1px solid #334155;
+        border-radius: 20px;
+        padding: 45px;
+        margin-bottom: 35px;
+    }
+
+        .hero h1 {
+            font-size: 42px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .hero p {
+            color: #cbd5e1;
+            font-size: 18px;
+        }
+
+    .stat-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 25px;
+        height: 100%;
+        transition: 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: #6366f1;
+        }
+
+        .stat-card h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-top: 15px;
+        }
+
+        .stat-card p {
+            color: #94a3b8;
+            margin-bottom: 0;
+        }
+
+    .section-title {
+        color: white;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .recent-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 25px;
+    }
+
+    .muted {
+        color: #94a3b8;
+    }
+
+    .accent {
+        color: #818cf8;
+    }
+
+    .btn-main {
+        background: #6366f1;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: 0.2s;
+    }
+
+        .btn-main:hover {
+            background: #4f46e5;
+            color: white;
+        }
+
+    .tournament-item {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: 0.2s;
+    }
+
+        .tournament-item:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+
+    .status-active {
+        color: #34d399;
+    }
+
+    .status-finished {
+        color: #818cf8;
+    }
+
+    .tournament-item h5 {
+        color: white;
+        font-weight: 700;
+    }
+
+    .tournament-system {
+        color: #818cf8;
+        font-size: 14px;
+    }
+</style>
+
+<div class="container dashboard">
+
+    <!-- Главный баннер -->
+    <div class="hero">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+
+                <p class="accent fw-bold mb-2">
+                    TOURNAMENT MANAGEMENT SYSTEM
+                </p>
+
+                <h1>TournamentManager</h1>
+
+                <p class="mt-3">
+                    Создавай турниры, управляй игроками,
+                    проводи матчи и следи за результатами
+                    в одном месте.
+                </p>
+
+                <a asp-controller="Tournaments"
+                   asp-action="Index"
+                   class="btn-main mt-3">
+                    Мои турниры →
+                </a>
+
+            </div>
+
+            <div class="col-md-4 text-center mt-4 mt-md-0">
+                <div style="font-size: 100px;">🏆</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <h3 class="section-title">Общая статистика</h3>
+
+    <div class="row g-4 mb-5">
+
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div style="font-size: 30px;">🏆</div>
+                <p>Всего турниров</p>
+                <h2 class="accent">@tournaments.Count</h2>
+                <p>Все созданные соревнования</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div style="font-size: 30px;">⚡</div>
+                <p>Активные турниры</p>
+                <h2 style="color: #34d399;">@activeCount</h2>
+                <p>Турниры в процессе</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div style="font-size: 30px;">🏅</div>
+                <p>Завершённые турниры</p>
+                <h2 style="color: #fbbf24;">@finishedCount</h2>
+                <p>Завершённые соревнования</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Последние турниры -->
+    <div id="tournaments">
+
+        <h3 class="section-title">Последние турниры</h3>
+
+        @if (!string.IsNullOrEmpty(ViewBag.ApiError as string))
+        {
+            <div class="recent-card">
+                <p style="color: #f87171;">
+                    ⚠ @ViewBag.ApiError
+                </p>
+            </div>
+        }
+        else if (recentTournaments.Any())
+        {
+            @foreach (var tournament in recentTournaments)
+            {
+                <div class="tournament-item">
+                    <div class="row align-items-center">
+
+                        <div class="col-md-8">
+
+                            <h5>🏆 @tournament.Name</h5>
+
+                            <p class="muted mb-1">
+                                ID турнира: @tournament.Id
+                            </p>
+
+                            <p class="muted mb-1">
+                                👥 Участников:
+                                @(tournament.PlayerIds?.Count ?? 0)
+                            </p>
+
+                            <p class="muted mb-2">
+                                📅 Создан:
+                                @tournament.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                            </p>
+
+                            <p class="tournament-system mb-2">
+                                🏆 Турнирная система: Олимпийская
+                            </p>
+
+                            <a asp-controller="Tournaments"
+                               asp-action="Details"
+                               asp-route-id="@tournament.Id"
+                               class="btn-main mt-2">
+                                Открыть турнир →
+                            </a>
+
+                        </div>
+
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+
+                            @if (tournament.IsFinished)
+                            {
+                                <span class="status-finished fw-bold">
+                                    ● Завершён
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-active fw-bold">
+                                    ● Активен
+                                </span>
+                            }
+
+                        </div>
+
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="recent-card text-center">
+
+                <div style="font-size: 55px;">🏟️</div>
+
+                <h4 class="text-white mt-3">
+                    Турниров пока нет
+                </h4>
+
+                <p class="muted mt-2">
+                    Здесь будут отображаться созданные турниры,
+                    их участники и результаты.
+                </p>
+
+                <a asp-controller="Tournaments"
+                   asp-action="Create"
+                   class="btn-main mt-3">
+                    + Создать турнир
+                </a>
+
+            </div>
+        }
+
+    </div>
+
+    <!-- О проекте -->
+    <div class="recent-card mt-4">
+        <h4 class="text-white">О проекте</h4>
+
+        <p class="muted mb-0 mt-3">
+            TournamentManager — система организации
+            спортивных соревнований с автоматической
+            генерацией олимпийской турнирной сетки,
+            управлением матчами и результатами.
+        </p>
+    </div>
+
+    <footer class="text-center muted mt-5 pb-3">
+        TournamentManager © 2026
+    </footer>
+
+</div>

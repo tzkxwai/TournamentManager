@@ -54,6 +54,9 @@ namespace TournamentService.Migrations
                     b.Property<int?>("Player2Id")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("RatingUpdated")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Round")
                         .HasColumnType("INTEGER");
 

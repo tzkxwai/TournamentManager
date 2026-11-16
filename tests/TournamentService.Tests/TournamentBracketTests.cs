@@ -61,4 +61,37 @@ public class TournamentBracketTests
         Assert.Throws<ArgumentException>(() =>
             service.GenerateFirstRound(players));
     }
+
+    // Проверяем создание сетки для трёх игроков (BYE)
+    [Fact]
+    public void ThreePlayers_ShouldCreateTwoMatchesWithBye()
+    {
+        var service = new TournamentBracketService();
+        var players = new List<int> { 1, 2, 3 };
+
+        var matches = service.GenerateFirstRound(players);
+
+        Assert.Equal(2, matches.Count);
+
+        var playersInMatches = matches
+            .SelectMany(m => new[] { m.Player1Id, m.Player2Id })
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToList();
+
+        Assert.Equal(3, playersInMatches.Count);
+        Assert.Equal(3, playersInMatches.Distinct().Count());
+    }
+
+    // Проверяем запрет на создание сетки без игроков
+    [Fact]
+    public void EmptyPlayers_ShouldThrowException()
+    {
+        var service = new TournamentBracketService();
+        var players = new List<int>();
+
+        Assert.Throws<ArgumentException>(() =>
+            service.GenerateFirstRound(players));
+    }
+
 }

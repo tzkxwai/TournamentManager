@@ -1,0 +1,344 @@
+﻿@model TournamentWeb.Controllers.TournamentDetailsViewModel
+
+@{
+    ViewData["Title"] = "Турнир";
+
+    var tournament = Model.Tournament;
+    var players = Model.Players ?? new List<TournamentWeb.Controllers.PlayerDto>();
+    var matches = Model.Matches ?? new List<TournamentWeb.Controllers.MatchDto>();
+
+    string PlayerName(int? id)
+    {
+        if (id == null) return "Свободный проход";
+
+        return players.FirstOrDefault(p => p.Id == id)?.Name
+            ?? $"Игрок #{id}";
+    }
+
+    var rounds = matches
+        .GroupBy(m => m.Round)
+        .OrderBy(g => g.Key)
+        .ToList();
+
+    var lastRound = rounds.LastOrDefault();
+
+    var roundFinished = lastRound != null &&
+        lastRound.All(m => m.WinnerId != null || m.Player2Id == null);
+
+    var isFinal = lastRound != null &&
+        lastRound.Count() == 1 &&
+        lastRound.Single().WinnerId != null;
+}
+
+<style>
+    body {
+        background: #0f172a;
+        color: #f1f5f9;
+    }
+
+    .page {
+        padding: 35px 0;
+    }
+
+    .main-card, .match-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 25px;
+    }
+
+    .match-card {
+        margin-bottom: 15px;
+    }
+
+    .section-title {
+        color: white;
+        font-weight: 800;
+    }
+
+    .muted {
+        color: #94a3b8;
+    }
+
+    .accent {
+        color: #818cf8;
+    }
+
+    .player {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 9px;
+        padding: 12px;
+        margin: 8px 0;
+    }
+
+    .winner {
+        border-color: #34d399;
+        color: #34d399;
+    }
+
+    .btn-main {
+        display: inline-block;
+        background: #6366f1;
+        color: white;
+        padding: 11px 20px;
+        border: none;
+        border-radius: 9px;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-main:hover {
+            background: #4f46e5;
+            color: white;
+        }
+
+    .btn-back {
+        color: #cbd5e1;
+        text-decoration: none;
+    }
+
+    .round-column {
+        min-width: 280px;
+        flex: 1;
+    }
+
+    .rounds-container {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding-bottom: 15px;
+    }
+
+    .champion {
+        background: linear-gradient(120deg, #1e293b, #312e81);
+        border: 1px solid #818cf8;
+        border-radius: 16px;
+        padding: 30px;
+        text-align: center;
+    }
+</style>
+
+<div class="container page">
+
+    <a asp-action="Index" class="btn-back">
+        ← Назад к турнирам
+    </a>
+
+    <div class="main-card mt-4 mb-4">
+
+        <div class="d-flex justify-content-between flex-wrap gap-3">
+            <div>
+                <p class="accent fw-bold mb-2">
+                    TOURNAMENT MANAGER
+                </p>
+
+                <h1 class="section-title">
+                    🏆 @tournament.Name
+                </h1>
+
+                <p class="muted mb-0">
+                    ID турнира: @tournament.Id
+                </p>
+
+                <p class="muted mb-0">
+                    Участников: @(tournament.PlayerIds?.Count ?? 0)
+                </p>
+            </div>
+
+            <div>
+                @if (tournament.IsFinished)
+                {
+                    <span class="text-warning fw-bold">
+                        ● Турнир завершён
+                    </span>
+                }
+                else
+                {
+                    <span class="text-success fw-bold">
+                        ● Турнир активен
+                    </span>
+                }
+            </div>
+        </div>
+
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (ViewBag.BracketError != null)
+    {
+        <div class="alert alert-warning">
+            @ViewBag.BracketError
+        </div>
+    }
+
+    <h3 class="section-title mb-4">
+        👥 Участники турнира
+    </h3>
+
+    <div class="row g-3 mb-5">
+
+        @foreach (var playerId in tournament.PlayerIds ?? new List<int>())
+        {
+            var player = players.FirstOrDefault(p => p.Id == playerId);
+
+            <div class="col-md-4">
+                <div class="main-card">
+                    <h5 class="text-white">
+                        @(player?.Name ?? $"Игрок #{playerId}")
+                    </h5>
+
+                    <p class="muted mb-0">
+                        Рейтинг: @(player?.Rating ?? 1000)
+                    </p>
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <h3 class="section-title mb-4">
+        🏆 Олимпийская турнирная сетка
+    </h3>
+
+    @if (!matches.Any())
+    {
+        <div class="main-card text-center">
+            <h4 class="text-white">
+                Турнирная сетка пока не создана
+            </h4>
+        </div>
+    }
+    else
+    {
+        <div class="rounds-container">
+
+            @foreach (var round in rounds)
+            {
+                <div class="round-column">
+
+                    <h4 class="accent mb-3">
+                        Раунд @round.Key
+                    </h4>
+
+                    @foreach (var match in round.OrderBy(m => m.Id))
+                    {
+                        <div class="match-card">
+
+                            <p class="muted">
+                                Матч #@match.Id
+                            </p>
+
+                            <div class="player @(match.WinnerId == match.Player1Id ? "winner" : "")">
+                                @PlayerName(match.Player1Id)
+
+                                @if (match.WinnerId == match.Player1Id)
+                                {
+                                    <strong> ✓</strong>
+                                }
+                            </div>
+
+                            <div class="text-center muted">VS</div>
+
+                            <div class="player @(match.WinnerId == match.Player2Id && match.Player2Id != null ? "winner" : "")">
+                                @PlayerName(match.Player2Id)
+
+                                @if (match.Player2Id != null &&
+                                     match.WinnerId == match.Player2Id)
+                                {
+                                    <strong> ✓</strong>
+                                }
+                            </div>
+
+                            @if (match.WinnerId != null)
+                            {
+                                <p class="text-success mt-2 mb-0">
+                                    Победитель: @PlayerName(match.WinnerId)
+                                </p>
+                            }
+                            else if (match.Player2Id == null)
+                            {
+                                <p class="text-success mt-2 mb-0">
+                                    ✓ Автоматический проход
+                                </p>
+                            }
+                            else if (!tournament.IsFinished)
+                            {
+                                <hr style="border-color: #475569;" />
+
+                                <form asp-action="SetWinner"
+                                      asp-route-id="@tournament.Id"
+                                      asp-route-matchId="@match.Id"
+                                      method="post">
+
+                                    <button type="submit"
+                                            name="winnerId"
+                                            value="@match.Player1Id"
+                                            class="btn-main w-100 mb-2">
+                                        Победил @PlayerName(match.Player1Id)
+                                    </button>
+
+                                    <button type="submit"
+                                            name="winnerId"
+                                            value="@match.Player2Id"
+                                            class="btn-main w-100">
+                                        Победил @PlayerName(match.Player2Id)
+                                    </button>
+
+                                </form>
+                            }
+
+                        </div>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+        @if (isFinal)
+        {
+            var champion = lastRound!.Single().WinnerId;
+
+            <div class="champion mt-4">
+                <div style="font-size: 65px;">🏆</div>
+                <h2 class="text-white">ЧЕМПИОН ТУРНИРА</h2>
+                <h3 class="text-success">
+                    @PlayerName(champion)
+                </h3>
+            </div>
+        }
+        else if (roundFinished && !tournament.IsFinished)
+        {
+            <div class="main-card mt-4 text-center">
+
+                <h4 class="text-white">
+                    Раунд завершён!
+                </h4>
+
+                <p class="muted">
+                    Все матчи завершены. Можно переходить дальше.
+                </p>
+
+                <form asp-action="NextRound"
+                      asp-route-id="@tournament.Id"
+                      method="post">
+
+                    <button type="submit" class="btn-main">
+                        Создать следующий раунд →
+                    </button>
+
+                </form>
+
+            </div>
+        }
+    }
+
+</div>

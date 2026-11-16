@@ -5,28 +5,33 @@ using TournamentService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// подключаем генератор турнирной сетки
+// Подключение генератора турнирной сетки
 builder.Services.AddScoped<TournamentBracketService>();
 
-// подключаем базу данных турниров
+// Подключение базы данных турниров
 builder.Services.AddDbContext<TournamentDbContext>(options =>
     options.UseSqlite("Data Source=tournaments.db"));
 
-// подключаем контроллеры
+// Подключение PlayerService для ELO
+builder.Services.AddHttpClient("PlayerApi", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5244/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+// Подключение контроллеров
 builder.Services.AddControllers();
 
-// подключаем OpenAPI
+// Подключение OpenAPI
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// включаем OpenAPI в режиме разработки
+// OpenAPI в режиме разработки
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

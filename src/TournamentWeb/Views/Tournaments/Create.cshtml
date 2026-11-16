@@ -1,0 +1,237 @@
+﻿@model TournamentWeb.Controllers.CreateTournamentViewModel
+
+@{
+    ViewData["Title"] = "Создание турнира";
+}
+
+<style>
+    body {
+        background: #0f172a;
+        color: #f1f5f9;
+    }
+
+    .create-page {
+        padding: 40px 0;
+        min-height: 85vh;
+    }
+
+    .create-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 18px;
+        padding: 30px;
+    }
+
+    .section-title {
+        color: white;
+        font-weight: 800;
+    }
+
+    .muted {
+        color: #94a3b8;
+    }
+
+    .form-control {
+        background: #0f172a;
+        border: 1px solid #475569;
+        color: white;
+        border-radius: 10px;
+        padding: 12px;
+    }
+
+        .form-control:focus {
+            background: #0f172a;
+            color: white;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: #64748b;
+        }
+
+    .player-card {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: 0.2s;
+    }
+
+        .player-card:hover {
+            border-color: #6366f1;
+        }
+
+        .player-card input {
+            width: 19px;
+            height: 19px;
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+
+    .btn-main {
+        background: #6366f1;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 13px 24px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-main:hover {
+            background: #4f46e5;
+            color: white;
+        }
+
+    .btn-back {
+        color: #94a3b8;
+        text-decoration: none;
+    }
+
+        .btn-back:hover {
+            color: white;
+        }
+
+    .rating {
+        color: #fbbf24;
+        font-weight: 700;
+    }
+</style>
+
+<div class="container create-page">
+
+    <div class="mb-4">
+        <a asp-action="Index" class="btn-back">
+            ← Назад к турнирам
+        </a>
+
+        <h1 class="section-title mt-3">
+            🏆 Создание турнира
+        </h1>
+
+        <p class="muted">
+            Заполни название и выбери участников соревнования.
+        </p>
+    </div>
+
+    <div class="create-card">
+
+        <form asp-controller="Tournaments"
+              asp-action="Create"
+              method="post">
+
+            <div asp-validation-summary="All"
+                 class="text-danger mb-3">
+            </div>
+
+            <div class="mb-4">
+
+                <label asp-for="Name"
+                       class="form-label text-white fw-bold">
+                    Название турнира
+                </label>
+
+                <input asp-for="Name"
+                       class="form-control"
+                       placeholder="Например: Летний чемпионат 2026" />
+
+                <span asp-validation-for="Name"
+                      class="text-danger">
+                </span>
+
+            </div>
+
+            <hr style="border-color: #475569;" />
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <div>
+                    <h4 class="text-white mb-1">
+                        Участники турнира
+                    </h4>
+
+                    <p class="muted mb-0">
+                        Выбери минимум двух игроков
+                    </p>
+                </div>
+
+                <span class="badge bg-primary">
+                    @Model.Players.Count игроков
+                </span>
+
+            </div>
+
+            @if (Model.Players == null || !Model.Players.Any())
+            {
+                <div class="text-center py-5">
+
+                    <div style="font-size: 50px;">👥</div>
+
+                    <h5 class="text-white mt-3">
+                        Игроков пока нет
+                    </h5>
+
+                    <p class="muted">
+                        Сначала добавь игроков через PlayerService.
+                    </p>
+
+                </div>
+            }
+            else
+            {
+                @foreach (var player in Model.Players)
+                {
+                    <label class="player-card d-flex align-items-center gap-3">
+
+                        <input type="checkbox"
+                               name="PlayerIds"
+                               value="@player.Id"
+                               checked="@(Model.PlayerIds?.Contains(player.Id) == true)" />
+
+                        <div class="flex-grow-1">
+
+                            <div class="text-white fw-bold">
+                                @player.Name
+                            </div>
+
+                            <div class="muted small">
+                                ID игрока: @player.Id
+                            </div>
+
+                        </div>
+
+                        <div class="rating">
+                            ⭐ @player.Rating
+                        </div>
+
+                    </label>
+                }
+            }
+
+            <hr style="border-color: #475569;" />
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                <a asp-action="Index" class="btn-back">
+                    Отмена
+                </a>
+
+                <button type="submit"
+                        class="btn-main"
+                        disabled="@(Model.Players == null || Model.Players.Count < 2)">
+                    🏆 Создать турнир
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

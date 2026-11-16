@@ -20,4 +20,7 @@ public class TournamentMatch
 
     // победитель матча
     public int? WinnerId { get; set; }
+
+    // отметка о начислении рейтинга
+    public bool RatingUpdated { get; set; } = false;
 }
